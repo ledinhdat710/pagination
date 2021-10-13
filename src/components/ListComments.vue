@@ -35,7 +35,7 @@
 export default {
   data() {
     return {
-      title: "Danh sách Comments",
+      title: 'Danh sách Comments',
       datas: [],
       counter: 0,
       pagination: {
