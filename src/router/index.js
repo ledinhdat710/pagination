@@ -1,13 +1,13 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import VueAxios from 'vue-axios';
-import axios from 'axios';
-Vue.use(VueAxios,axios);
 import HelloWorld from '@/components/HelloWorld'
 import ListComments from '@/components/ListComments'
-import Pagination from '@/components/Pagination'
-import Paginate from 'vuejs-paginate'
-Vue.component('paginate', Paginate)
+import BootstrapVue from 'bootstrap-vue'
+import 'bootstrap/dist/css/bootstrap.min.css'
+import 'bootstrap-vue/dist/bootstrap-vue.css'
+import JwPagination from 'jw-vue-pagination';
+Vue.component('jw-pagination', JwPagination);
+Vue.use(BootstrapVue)
 
 Vue.use(Router)
 
@@ -21,8 +21,7 @@ export default new Router({
     {
       path: '/listcomments',
       name: 'ListComments',
-      component: ListComments,Pagination
+      component: ListComments
     },
-
   ]
 })
