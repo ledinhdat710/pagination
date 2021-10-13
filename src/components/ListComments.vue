@@ -1,90 +1,83 @@
 <template>
-  <div class="col-lg-12 col-md-12 col-xs-12 table-responsive">
-    <h2>{{ title }}</h2>
-    <table class="table table-hover table-bordered">
-      <thead>
-        <tr v-for="(data, index) in datas" v-bind:key="index">
-          <td>{{ data.id }}</td>
-          <td>{{ data.name }}</td>
-          <td>{{ data.email }}</td>
-          <td>{{ data.body }}</td>
-        </tr>
-      </thead>
-      <tbody id="myTable"></tbody>
+  <div>
+    <h1 style="text-align: center">{{ title }}</h1>
+    <table border="1px">
+      <tr>
+        <td>ID</td>
+        <td>Name</td>
+        <td>Email</td>
+        <td>Noi dung</td>
+      </tr>
+      <tr v-for="post in pageOfItems" v-bind:key="post.id">
+        <td>{{ post.id }}</td>
+        <td>{{ post.name }}</td>
+        <td>{{ post.email }}</td>
+        <td>{{ post.body }}</td>
+      </tr>
     </table>
-    <!-- <paginate
-      :page-count="30"
-      :page-range="2"
-      :margin-pages="2"
-      :click-handler="clickCallback"
-      :prev-text="'Prev'"
-      :next-text="'Next'"
-      :container-class="'pagination'"
-      :page-class="'page-item'"
-    >
-    </paginate> -->
-    <pagination
-      v-bind:pagination="pagination"
-      v-on:click.native="danhsach_comments(pagination.current_page)"
-      :offset="4"
-    ></pagination>
+    <div class="card-footer pb-0 pt-3">
+      <jw-pagination
+        :items="datas"
+        @changePage="onChangePage"
+        :pageSize="10"
+        :maxPages="10"
+      ></jw-pagination>
+    </div>
   </div>
 </template>
-<script>
 
+<script>
+import axios from 'axios';
+import Vue from 'vue';
+import VueAxios from 'vue-axios';
+Vue.use(VueAxios, axios);
 export default {
   data() {
     return {
-      title: 'Danh sách Comments',
+      title: 'Danh sach Comment',
       datas: [],
-      counter: 0,
-      pagination: {
-        total: 0,
-        per_page: 2,
-        from: 1,
-        to: 0,
-        current_page: 1,
-      },
-      offset: 4,
+      pageOfItems: [],
     };
   },
-  created: function () {
-    this.danhsach_comments();
-  },
   mounted() {
-    this.danhsach_comments(this.pagination.current_page);
+    Vue.axios
+      .get('http://jsonplaceholder.typicode.com/comments')
+      .then((response) => {
+        this.datas = response.data;
+        console.log(response.data);
+      })
+      .catch(function (e) {
+        console.log('Error is ' + e);
+      });
   },
   methods: {
-    danhsach_comments(page) {
-      this.axios
-        .get("http://jsonplaceholder.typicode.com/comments")
-        .then((response) => {
-          this.datas = response.data;
-          this.pagination = response.data;
-        });
-    },
-    clickCallback(pageNum) {
-      console.log(pageNum);
+    onChangePage(pageOfItems) {
+      // update page of items
+      this.pageOfItems = pageOfItems;
     },
   },
-  computed: {},
 };
 </script>
- <style>
+<style scoped>
+body {
+  background: #20262e;
+  padding: 20px;
+  font-family: Helvetica;
+}
 table {
-  right: 0;
-  left: 0;
-  top: 0;
-  margin: auto;
+  margin: 20px 5px 0px 45px;
 }
-table tr th {
-  background: rgba(0, 145, 234, 1);
-  padding: 10px;
-  color: #fff;
+li {
+  margin: 8px 0;
 }
-table tr td {
-  padding: 10px;
-  border-right: 1px solid rgba(0, 0, 0, 0.1);
-  font-size: 15px;
+h2 {
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+del {
+  color: rgba(0, 0, 0, 0.3);
+}
+li.inline {
+  display: inline;
 }
 </style>
