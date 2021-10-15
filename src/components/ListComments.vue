@@ -2,24 +2,28 @@
   <div class="col-sm-12">
     <div>
       <h1>{{ title }}</h1>
-      <form action="">
-        <tfoot>
-          <tr>
-            <td>
-              <input type="text" v-model="objPost.name" placeholder="Name" />
-            </td>
-            <td>
-              <input type="text" v-model="objPost.email" placeholder="Email" />
-            </td>
-            <td>
-              <input type="text" v-model="objPost.body" placeholder="Content" />
-            </td>
-            <td>
-              <button v-on:click="addPost()">Add Comment</button>
-            </td>
-          </tr>
-        </tfoot>
-      </form>
+      <b-button v-b-modal.modal-prevent-closing @click="addBefore()"
+        >Add</b-button
+      >
+      <b-modal
+        id="modal-prevent-closing"
+        ref="modal"
+        @show="resetModal"
+        @hidden="resetModal"
+        @ok="handleOk"
+      >
+        <form ref="form" @submit.stop.prevent="handleSubmit">
+          <b-form-group label="Name">
+            <b-form-input v-model="objPost.name"></b-form-input>
+          </b-form-group>
+          <b-form-group label="Email">
+            <b-form-input v-model="objPost.email"></b-form-input>
+          </b-form-group>
+          <b-form-group label="Noi dung">
+            <b-form-input v-model="objPost.body"></b-form-input>
+          </b-form-group>
+        </form>
+      </b-modal>
       <table class="table table-bordered">
         <thead>
           <tr>
@@ -37,12 +41,28 @@
             <td>{{ post.email }}</td>
             <td>{{ post.body }}</td>
             <td>
-              <button v-b-modal.modal-prevent-closing @click="clickEdit(item)">
+              <button
+                class="btn btn-secondary"
+                v-b-modal.modal-prevent-closing
+                @click="clickEdit(post)"
+              >
                 Edit
               </button>
-              <button class="btn btn-danger" @click="deletePost(posts.id)">
+              <button class="btn btn-danger" v-b-modal.delete @click="deletePost(post.id)">
                 Delete
               </button>
+              <router-link
+                :to="{
+                  name: 'CommentPage',
+                  params: { id: post.id },
+                }"
+              >
+                <button class="btn btn-info">Detail</button>
+              </router-link>
+              <b-modal id="delete">
+                <p class="my-4">Ban chac chan muon xoa ? </p>
+
+              </b-modal>
             </td>
           </tr>
         </tbody>
@@ -105,28 +125,31 @@
 </template>
 
 <script>
-import axios from "axios";
-import Vue from "vue";
-import VueAxios from "vue-axios";
+import axios from 'axios';
+import Vue from 'vue';
+import VueAxios from 'vue-axios';
 // import Pagination from "./Pagination.vue";
 Vue.use(VueAxios, axios);
 export default {
   // components: { Pagination },
   data() {
     return {
-      title: "Danh sach comment",
-      objPost: { name: "", email: "", body: "" },
-      editPost: { name: "", email: "", body: "" },
+      title: 'Danh sach comment',
+      objPost: { name: '', email: '', body: ''},
+      editPost: { name: '', email: '', body: ''},
       posts: [],
       page: 1,
       perPage: 10,
       pages: [],
+      name: '',
+      nameState: null,
+      submittedNames: [],
     };
   },
   methods: {
     getPosts() {
       axios
-        .get("http://jsonplaceholder.typicode.com/comments")
+        .get('http://jsonplaceholder.typicode.com/comments')
         .then((response) => {
           if (localStorage.posts == undefined) {
             localStorage.setItem("posts", JSON.stringify(response.data)); //Save LocaStorage
@@ -136,7 +159,7 @@ export default {
           console.log(response.data);
         })
         .catch(function (e) {
-          console.log("Error is " + e);
+          console.log('Error is ' + e);
         });
     },
     setPages() {
@@ -156,15 +179,73 @@ export default {
     sort() {
       this.posts.sort((a, b) => b.id - a.id);
     },
-    addPost() {
+    deletePost(id) {
+      this.deleteDialog = true;
+      console.log('delete: ' + id);
+      const removeIndex = this.posts.findIndex((item) => item.id === id);
+      // remove object
+      console.log(removeIndex);
+      this.posts.splice(removeIndex, 1);
+      localStorage.setItem('posts', JSON.stringify(this.posts));
+      this.sort();
+    },
+    clickEdit(post) {
+      console.log('edit');
+      this.objPost.name = post.name;
+      this.objPost.email = post.email;
+      this.objPost.body = post.body;
+      this.objPost.id = post.id;
+    },
+    checkFormValidity() {
+      const valid = this.$refs.form.checkValidity();
+      this.nameState = valid;
+      return valid;
+    },
+    resetModal() {
+      this.name = '';
+      this.nameState = null;
+    },
+    addBefore() {
+      this.objPost.id = '';
+      this.objPost.name = '';
+      this.objPost.email = '';
+      this.objPost.body = '';
+    },
+    handleOk(bvModalEvt) {
+      console.log(this.objPost.id);
+      if (this.objPost.id > 0) {
+        const objcurrent = this.posts.findIndex(
+          (item) => item.id === this.objPost.id
+        );
+        this.posts[objcurrent].name = this.objPost.name;
+        this.posts[objcurrent].email = this.objPost.email;
+        this.posts[objcurrent].body = this.objPost.body;
+        localStorage.setItem("posts", JSON.stringify(this.posts));
+        this.sort();
+        this.objPost.id = '';
+        this.objPost.name = '';
+        this.objPost.email = '';
+        this.objPost.body = '';
+        return;
+      }
+      // Prevent modal from closing
+      bvModalEvt.preventDefault();
+      // Trigger submit handler
       if (
-        this.objPost.name == "" ||
-        this.objPost.email == "" ||
-        this.objPost.body == ""
+        this.objPost.name == '' ||
+        this.objPost.email == '' ||
+        this.objPost.body == ''
       ) {
         alert("Input Invalid");
       } else {
-        this.objPost.id = this.posts.length + 1;
+        var maxcurrent = Math.max.apply(
+          Math,
+          this.posts.map(function (o) {
+            return o.id;
+          })
+        );
+        console.log(maxcurrent);
+        this.objPost.id = maxcurrent + 1;
         var objAdd = {
           id: this.objPost.id,
           name: this.objPost.name,
@@ -172,23 +253,27 @@ export default {
           body: this.objPost.body,
         };
         this.posts.push(objAdd);
-        localStorage.setItem("posts", JSON.stringify(this.posts));
+        localStorage.setItem('posts', JSON.stringify(this.posts));
         this.sort();
-        this.objPost.name = "";
-        this.objPost.email = "";
-        this.objPost.body = "";
+        this.objPost.name = '';
+        this.objPost.email = '';
+        this.objPost.body = '';
         this.setPages();
+        this.handleSubmit();
       }
     },
-    deletePost(id) {
-      let uri = "http://jsonplaceholder.typicode.com/comments/${id}";
-      this.axios.delete(uri).then((response) => {
-        this.posts.splice(this.posts.indexOf(id), 1);
+    handleSubmit() {
+      // Exit when the form isn't valid
+      if (!this.checkFormValidity()) {
+        return;
+      }
+      // Push the name to submitted names
+      this.submittedNames.push(this.name);
+      // Hide the modal manually
+      this.$nextTick(() => {
+        this.$bvModal.hide('modal-prevent-closing');
       });
     },
-    clickEdit(){
-      console.log('edit');
-    }
   },
   computed: {
     displayedPosts() {
@@ -217,4 +302,4 @@ button.page-link {
   color: #29b3ed;
   font-weight: 500;
 }
-</style> 
+</style>
