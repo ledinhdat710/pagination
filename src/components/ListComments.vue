@@ -24,6 +24,19 @@
           </b-form-group>
         </form>
       </b-modal>
+      <b-modal id="detail">
+        <form>
+          <b-form-group label="Name">
+            <b-form-input v-model="objPost.name"></b-form-input>
+          </b-form-group>
+          <b-form-group label="Email">
+            <b-form-input v-model="objPost.email"></b-form-input>
+          </b-form-group>
+          <b-form-group label="Noi dung">
+            <b-form-input v-model="objPost.body"></b-form-input>
+          </b-form-group>
+        </form>
+      </b-modal>
       <table class="table table-bordered">
         <thead>
           <tr>
@@ -32,6 +45,7 @@
             <th>Email</th>
             <th>Noi dung</th>
             <th>Hanh dong</th>
+            <th>Image</th>
           </tr>
         </thead>
         <tbody>
@@ -48,21 +62,33 @@
               >
                 Edit
               </button>
-              <button class="btn btn-danger" v-b-modal.delete @click="deletePost(post.id)">
+              <button
+                class="btn btn-danger"
+                v-b-modal.delete
+                @click="deletePost(post.id)"
+              >
                 Delete
               </button>
-              <router-link
-                :to="{
-                  name: 'CommentPage',
-                  params: { id: post.id },
-                }"
+              <button
+                v-b-modal.detail
+                @click="clickDetail()"
+                class="btn btn-info"
               >
-                <button class="btn btn-info">Detail</button>
-              </router-link>
+                Detail
+              </button>
               <b-modal id="delete">
-                <p class="my-4">Ban chac chan muon xoa ? </p>
-
+                <p class="my-4">Ban chac chan muon xoa ?</p>
               </b-modal>
+            </td>
+            <td>
+              <div v-if="!image">
+                Select an image
+                <input type="file" @change="onFileChange"/>
+              </div>
+              <div v-else>
+                <img :src="image" />
+                <button @click="removeImage">Remove image</button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -125,31 +151,32 @@
 </template>
 
 <script>
-import axios from 'axios';
-import Vue from 'vue';
-import VueAxios from 'vue-axios';
+import axios from "axios";
+import Vue from "vue";
+import VueAxios from "vue-axios";
 // import Pagination from "./Pagination.vue";
 Vue.use(VueAxios, axios);
 export default {
   // components: { Pagination },
   data() {
     return {
-      title: 'Danh sach comment',
-      objPost: { name: '', email: '', body: ''},
-      editPost: { name: '', email: '', body: ''},
+      title: "Danh sach comment",
+      objPost: { name: "", email: "", body: "" },
+      editPost: { name: "", email: "", body: "" },
       posts: [],
       page: 1,
       perPage: 10,
       pages: [],
-      name: '',
+      name: "",
       nameState: null,
       submittedNames: [],
+      image: "",
     };
   },
   methods: {
     getPosts() {
       axios
-        .get('http://jsonplaceholder.typicode.com/comments')
+        .get("http://jsonplaceholder.typicode.com/comments")
         .then((response) => {
           if (localStorage.posts == undefined) {
             localStorage.setItem("posts", JSON.stringify(response.data)); //Save LocaStorage
@@ -159,7 +186,7 @@ export default {
           console.log(response.data);
         })
         .catch(function (e) {
-          console.log('Error is ' + e);
+          console.log("Error is " + e);
         });
     },
     setPages() {
@@ -181,16 +208,23 @@ export default {
     },
     deletePost(id) {
       this.deleteDialog = true;
-      console.log('delete: ' + id);
+      console.log("delete: " + id);
       const removeIndex = this.posts.findIndex((item) => item.id === id);
       // remove object
       console.log(removeIndex);
       this.posts.splice(removeIndex, 1);
-      localStorage.setItem('posts', JSON.stringify(this.posts));
+      localStorage.setItem("posts", JSON.stringify(this.posts));
       this.sort();
     },
     clickEdit(post) {
-      console.log('edit');
+      console.log("edit");
+      this.objPost.name = post.name;
+      this.objPost.email = post.email;
+      this.objPost.body = post.body;
+      this.objPost.id = post.id;
+    },
+    clickDetail(post) {
+      console.log("detail");
       this.objPost.name = post.name;
       this.objPost.email = post.email;
       this.objPost.body = post.body;
@@ -202,14 +236,14 @@ export default {
       return valid;
     },
     resetModal() {
-      this.name = '';
+      this.name = "";
       this.nameState = null;
     },
     addBefore() {
-      this.objPost.id = '';
-      this.objPost.name = '';
-      this.objPost.email = '';
-      this.objPost.body = '';
+      this.objPost.id = "";
+      this.objPost.name = "";
+      this.objPost.email = "";
+      this.objPost.body = "";
     },
     handleOk(bvModalEvt) {
       console.log(this.objPost.id);
@@ -222,19 +256,19 @@ export default {
         this.posts[objcurrent].body = this.objPost.body;
         localStorage.setItem("posts", JSON.stringify(this.posts));
         this.sort();
-        this.objPost.id = '';
-        this.objPost.name = '';
-        this.objPost.email = '';
-        this.objPost.body = '';
+        this.objPost.id = "";
+        this.objPost.name = "";
+        this.objPost.email = "";
+        this.objPost.body = "";
         return;
       }
       // Prevent modal from closing
       bvModalEvt.preventDefault();
       // Trigger submit handler
       if (
-        this.objPost.name == '' ||
-        this.objPost.email == '' ||
-        this.objPost.body == ''
+        this.objPost.name == "" ||
+        this.objPost.email == "" ||
+        this.objPost.body == ""
       ) {
         alert("Input Invalid");
       } else {
@@ -253,11 +287,11 @@ export default {
           body: this.objPost.body,
         };
         this.posts.push(objAdd);
-        localStorage.setItem('posts', JSON.stringify(this.posts));
+        localStorage.setItem("posts", JSON.stringify(this.posts));
         this.sort();
-        this.objPost.name = '';
-        this.objPost.email = '';
-        this.objPost.body = '';
+        this.objPost.name = "";
+        this.objPost.email = "";
+        this.objPost.body = "";
         this.setPages();
         this.handleSubmit();
       }
@@ -271,8 +305,26 @@ export default {
       this.submittedNames.push(this.name);
       // Hide the modal manually
       this.$nextTick(() => {
-        this.$bvModal.hide('modal-prevent-closing');
+        this.$bvModal.hide("modal-prevent-closing");
       });
+    },
+    onFileChange(e) {
+      var files = e.target.files || e.dataTransfer.files;
+      if (!files.length) return;
+      this.createImage(files[0]);
+    },
+    createImage(file) {
+      var image = new Image();
+      var reader = new FileReader();
+      var vm = this;
+
+      reader.onload = (e) => {
+        vm.image = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    },
+    removeImage: function (e) {
+      this.image = "";
     },
   },
   computed: {
@@ -301,5 +353,11 @@ button.page-link {
   font-size: 20px;
   color: #29b3ed;
   font-weight: 500;
+}
+img {
+  width: 30%;
+  margin: auto;
+  display: block;
+  margin-bottom: 10px;
 }
 </style>
