@@ -192,7 +192,6 @@ export default {
         this.objPost.email = "";
         this.objPost.body = "";
         this.setPages();
-        this.handleSubmit();
       }
     },
     onFileChange(e) {
